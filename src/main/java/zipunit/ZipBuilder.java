@@ -37,11 +37,11 @@ public class ZipBuilder {
     }
 
     public ZipBuilder withEntry(String entryName, String content) {
-        return withEntry(entryName, content.getBytes());
+        return withEntry(new Entry(entryName, content));
     }
 
     public ZipBuilder withEntry(String entryName, byte[] content) {
-        return withEntry(new Entry(entryName, new ByteArrayInputStream(content)));
+        return withEntry(new Entry(entryName, content));
     }
 
     public ZipBuilder withEntry(Entry entry) {
@@ -50,7 +50,7 @@ public class ZipBuilder {
     }
 
     public ZipBuilder withDirEntry(String directoryName) {
-        return withEntry(new Entry(dirName(directoryName), null));
+        return withEntry(new Entry(dirName(directoryName), (InputStream) null));
     }
 
     public File build() {
@@ -68,6 +68,7 @@ public class ZipBuilder {
             output = new ZipOutputStream(new FileOutputStream(file));
             for (Entry entry : entries) {
                 ZipEntry zipEntry = new ZipEntry(entry.name);
+                zipEntry.setComment(entry.comment);
                 output.putNextEntry(zipEntry);
                 if (entry.content != null) {
                     copyContent(output, entry.content);
@@ -126,10 +127,24 @@ public class ZipBuilder {
     public static class Entry {
         private final String name;
         private final InputStream content;
+        private String comment;
+
+        public Entry(String name, String content) {
+            this(name, content.getBytes());
+        }
+
+        public Entry(String name, byte[] content) {
+            this(name, new ByteArrayInputStream(content));
+        }
 
         public Entry(String name, InputStream content) {
             this.name = name;
             this.content = content;
         }
+
+        public void setComment(String comment) {
+            this.comment = comment;
+        }
+
     }
 }

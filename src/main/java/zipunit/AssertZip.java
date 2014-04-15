@@ -18,19 +18,26 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Enumeration;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import static org.junit.Assert.*;
 
 public class AssertZip {
+    public static void assertEntryComment(String expectedEntry, final String expectedComment, File actualZipFile) {
+        assertEntryExists(expectedEntry, actualZipFile);
+        open(actualZipFile, new SpecificEntry(expectedEntry) {
+            protected void handleEntry(ZipFile file, ZipEntry entry) throws Exception {
+                assertEquals("The entry comment does not match", expectedComment, entry.getComment());
+            }
+        });
+    }
+
     public static void assertEntryActualSize(final String expectedEntry, final long expectedSize, File actualZipFile) {
         assertEntryExists(expectedEntry, actualZipFile);
-        open(actualZipFile, new WhileZipIsOpen() {
-            public void whileOpen(ZipFile zipFile) throws Exception {
-                ZipEntry entry = zipFile.getEntry(expectedEntry);
+        open(actualZipFile, new SpecificEntry(expectedEntry) {
+            protected void handleEntry(ZipFile file, ZipEntry entry) throws Exception {
                 assertEquals(expectedSize, entry.getSize());
             }
         });
@@ -40,21 +47,33 @@ public class AssertZip {
         assertEntry(expectedEntry, expectedContents.getBytes(), actualZipFile);
     }
 
-    public static void assertEntry(String expectedEntry, byte[] expectedContents, File actualZipFile) {
+    public static void assertEntry(final String expectedEntry, final byte[] expectedContents, File actualZipFile) {
         assertEntryExists(expectedEntry, actualZipFile);
-        Map<String, byte[]> entries = entriesIn(actualZipFile);
-        assertArrayEquals("Expected content does not match for entry [" + expectedEntry + "]",
-                expectedContents, entries.get(expectedEntry));
+        open(actualZipFile, new SpecificEntry(expectedEntry) {
+            protected void handleEntry(ZipFile file, ZipEntry entry) throws Exception {
+                assertArrayEquals("Expected content does not match for entry [" + expectedEntry + "]",
+                        expectedContents, contentsOf(entry, file));
+
+            }
+        });
     }
 
-    public static void assertEntryExists(String expectedEntry, File actualZipFile) {
-        Map<String, byte[]> entries = entriesIn(actualZipFile);
-        assertTrue("Expected to find entry [" + expectedEntry + "], but was not found. Actual entries:" + entries,
-                entries.keySet().contains(expectedEntry));
+    public static void assertEntryExists(final String expectedEntry, File actualZipFile) {
+        open(actualZipFile, new SpecificEntry(expectedEntry) {
+            protected void handleEntry(ZipFile file, ZipEntry entry) throws Exception {
+                assertNotNull("Expected to find entry [" + expectedEntry + "], but was not found.", entry);
+            }
+        });
     }
 
     public static void assertNumberOfEntriesIs(int expectedNumberOfEntries, File actualZipFile) {
-        assertEquals("Number of entries do not match", expectedNumberOfEntries, entriesIn(actualZipFile).size());
+        final AtomicLong counter = new AtomicLong(0);
+        open(actualZipFile, new EachEntry() {
+            protected void eachEntryOf(ZipFile zipFile, ZipEntry entry) throws Exception {
+                counter.incrementAndGet();
+            }
+        });
+        assertEquals("Number of entries do not match", expectedNumberOfEntries, counter.get());
     }
 
     public static void assertDirectoryEntryExist(final String expectedDirectoryPath, File actualZip) {
@@ -76,18 +95,6 @@ public class AssertZip {
         return expectedDirectoryPath + "/";
     }
 
-    private static Map<String, byte[]> entriesIn(File actualZipFile) {
-        assertFileExists(actualZipFile);
-        final LinkedHashMap<String, byte[]> entriesInZip = new LinkedHashMap<String, byte[]>();
-        open(actualZipFile, new EachEntry() {
-            protected void eachEntryOf(ZipFile zip, ZipEntry zipEntry) throws Exception {
-                String name = zipEntry.getName();
-                entriesInZip.put(name, contentsOf(zipEntry, zip));
-            }
-        });
-        return entriesInZip;
-    }
-
     private static void assertFileExists(File actualZipFile) {
         assertTrue("ZIP file does not exist", actualZipFile.exists());
     }
@@ -95,6 +102,7 @@ public class AssertZip {
     private static void open(File zipFile, WhileZipIsOpen opener) {
         ZipFile zip = null;
         try {
+            assertFileExists(zipFile);
             zip = new ZipFile(zipFile);
             opener.whileOpen(zip);
         } catch (Exception e) {
@@ -146,8 +154,23 @@ public class AssertZip {
         void whileOpen(ZipFile zipFile) throws Exception;
     }
 
+    private static abstract class SpecificEntry implements WhileZipIsOpen {
+        private final String entryToFind;
+
+        protected SpecificEntry(String entryToFind) {
+            this.entryToFind = entryToFind;
+        }
+
+        public final void whileOpen(ZipFile zipFile) throws Exception {
+            handleEntry(zipFile, zipFile.getEntry(entryToFind));
+        }
+
+        protected abstract void handleEntry(ZipFile file, ZipEntry entry) throws Exception;
+
+    }
+
     private static abstract class EachEntry implements WhileZipIsOpen {
-        public void whileOpen(ZipFile zipFile) throws Exception {
+        public final void whileOpen(ZipFile zipFile) throws Exception {
             Enumeration<? extends ZipEntry> entries = zipFile.entries();
             while (entries.hasMoreElements()) {
                 eachEntryOf(zipFile, entries.nextElement());

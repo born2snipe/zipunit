@@ -34,6 +34,23 @@ public class AssertZipTest {
         zipBuilder.withDirEntry("dir/");
     }
 
+    @Test(expected = AssertionError.class)
+    public void shouldFailWhenAnEntryCanNotBeFoundWhenComparingComments() {
+        AssertZip.assertEntryComment("doesNotExist", "comment", zipBuilder.build());
+    }
+
+    @Test(expected = AssertionError.class)
+    public void shouldFailWhenTheCommentsDoNotMatch() {
+        zipBuilder.withEntry(entryWithComment("test.txt", "comment"));
+        AssertZip.assertEntryComment("test.txt", "doesNotMatch", zipBuilder.build());
+    }
+
+    @Test
+    public void shouldAllowAssertingTheCommentOfAnEntry() {
+        zipBuilder.withEntry(entryWithComment("test.txt", "comment"));
+        AssertZip.assertEntryComment("test.txt", "comment", zipBuilder.build());
+    }
+
     @Test
     public void shouldAllowAssertingTheActualSizeOfTheFileEntry() {
         AssertZip.assertEntryActualSize("1.txt", 7, zipBuilder.build());
@@ -108,7 +125,7 @@ public class AssertZipTest {
     public void shouldSupportAssertingTheNumberOfEntriesInAFile() throws IOException {
         ZipBuilder zipBuilder = new ZipBuilder(temporaryFolder.newFolder());
         zipBuilder.withEntry("0.txt", "");
-        AssertZip.assertNumberOfEntriesIs(3, this.zipBuilder.build());
+        AssertZip.assertNumberOfEntriesIs(1, zipBuilder.build());
     }
 
     @Test
@@ -123,5 +140,11 @@ public class AssertZipTest {
 
     private File nonExistentZipFile() {
         return new File("doesNotExist.zip");
+    }
+
+    private ZipBuilder.Entry entryWithComment(String entryPath, String comment) {
+        ZipBuilder.Entry entry = new ZipBuilder.Entry(entryPath, "");
+        entry.setComment(comment);
+        return entry;
     }
 }
