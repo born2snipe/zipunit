@@ -34,13 +34,19 @@ public class ZipBuilderTest {
     }
 
     @Test
+    public void shouldAllowProvidingAnInputStreamAsEntryContent() {
+        zipBuilder.withEntry("test.txt", new ByteArrayInputStream("content".getBytes()));
+        AssertZip.assertEntry("test.txt", "content", zipBuilder.build());
+    }
+
+    @Test
     public void shouldAllowProvidingCommentsOnEntries() {
         ZipBuilder.Entry entry = new ZipBuilder.Entry("1.txt", "content");
         entry.setComment("comment");
         zipBuilder.withEntry(entry);
         AssertZip.assertEntryComment("1.txt", "comment", zipBuilder.build());
     }
-    
+
     @Test
     public void shouldCloseTheInputStreamOfTheEntryEvenWhenThereIsAnErrorReading() {
         MockInputStream input = new MockInputStream("content");

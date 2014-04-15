@@ -44,13 +44,17 @@ public class ZipBuilder {
         return withEntry(new Entry(entryName, content));
     }
 
+    public ZipBuilder withEntry(String entryName, InputStream content) {
+        return withEntry(new Entry(entryName, content));
+    }
+
     public ZipBuilder withEntry(Entry entry) {
         entries.add(entry);
         return this;
     }
 
     public ZipBuilder withDirEntry(String directoryName) {
-        return withEntry(new Entry(dirName(directoryName), (InputStream) null));
+        return withEntry(new DirectoryEntry(directoryName));
     }
 
     public File build() {
@@ -107,13 +111,6 @@ public class ZipBuilder {
         }
     }
 
-    private String dirName(String directoryName) {
-        if (directoryName.endsWith("/")) {
-            return directoryName;
-        }
-        return directoryName + "/";
-    }
-
     private void close(ZipOutputStream output) {
         if (output != null) {
             try {
@@ -121,6 +118,19 @@ public class ZipBuilder {
             } catch (IOException e) {
 
             }
+        }
+    }
+
+    public static class DirectoryEntry extends Entry {
+        public DirectoryEntry(String name) {
+            super(dirName(name), (InputStream) null);
+        }
+
+        private static String dirName(String directoryName) {
+            if (directoryName.endsWith("/")) {
+                return directoryName;
+            }
+            return directoryName + "/";
         }
     }
 
