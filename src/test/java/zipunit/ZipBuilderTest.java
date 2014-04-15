@@ -18,6 +18,11 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import java.io.ByteArrayInputStream;
+
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 public class ZipBuilderTest {
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -28,6 +33,44 @@ public class ZipBuilderTest {
         zipBuilder = new ZipBuilder(temporaryFolder.newFolder());
     }
 
+    @Test
+    public void shouldCloseTheInputStreamOfTheEntryEvenWhenThereIsAnErrorReading() {
+        MockInputStream input = new MockInputStream("content");
+        input.throwExceptionOnRead();
+
+        zipBuilder.withEntry(new ZipBuilder.Entry("1.txt", input));
+        try {
+            zipBuilder.build();
+            fail();
+        } catch (Exception e) {
+
+        }
+
+        assertTrue(input.isClosed());
+    }
+
+    @Test
+    public void shouldCloseTheInputStreamOfTheEntry() {
+        MockInputStream input = new MockInputStream("content");
+
+        zipBuilder.withEntry(new ZipBuilder.Entry("1.txt", input));
+        zipBuilder.build();
+
+        assertTrue(input.isClosed());
+    }
+
+    @Test
+    public void shouldAutomaticallySetTheSizeOfAnEntry() {
+        zipBuilder.withEntry("test/1.txt", "content");
+        AssertZip.assertEntryActualSize("test/1.txt", 7, zipBuilder.build());
+    }
+
+    @Test
+    public void shouldAllowAddingAnEntryWithAnInputStream() {
+        zipBuilder.withEntry(new ZipBuilder.Entry("test.txt", new ByteArrayInputStream("content".getBytes())));
+        AssertZip.assertEntry("test.txt", "content", zipBuilder.build());
+    }
+    
     @Test(expected = AssertionError.class)
     public void shouldBlowUpIfYouTryToBuildAZipWithoutAFolder() {
         new ZipBuilder().build("test");

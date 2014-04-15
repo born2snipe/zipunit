@@ -34,6 +34,21 @@ public class AssertZipTest {
         zipBuilder.withDirEntry("dir/");
     }
 
+    @Test
+    public void shouldAllowAssertingTheActualSizeOfTheFileEntry() {
+        AssertZip.assertEntryActualSize("1.txt", 7, zipBuilder.build());
+    }
+
+    @Test(expected = AssertionError.class)
+    public void shouldFailWhenTheEntryDoesNotExistWhenCheckingTheFileSize() {
+        AssertZip.assertEntryActualSize("doesNotExist", 0, zipBuilder.build());
+    }
+
+    @Test(expected = AssertionError.class)
+    public void shouldFailWhenTheFileSizeDoesNotMatch() {
+        AssertZip.assertEntryActualSize("1.txt", 0, zipBuilder.build());
+    }
+
     @Test(expected = AssertionError.class)
     public void shouldFailWhenAnEntryDoesNotExistWhenAssertingADirectory() {
         AssertZip.assertDirectoryEntryExist("doesNotExist", zipBuilder.build());

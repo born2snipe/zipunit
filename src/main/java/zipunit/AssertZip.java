@@ -26,6 +26,16 @@ import java.util.zip.ZipFile;
 import static org.junit.Assert.*;
 
 public class AssertZip {
+    public static void assertEntryActualSize(final String expectedEntry, final long expectedSize, File actualZipFile) {
+        assertEntryExists(expectedEntry, actualZipFile);
+        open(actualZipFile, new WhileZipIsOpen() {
+            public void whileOpen(ZipFile zipFile) throws Exception {
+                ZipEntry entry = zipFile.getEntry(expectedEntry);
+                assertEquals(expectedSize, entry.getSize());
+            }
+        });
+    }
+
     public static void assertEntry(String expectedEntry, String expectedContents, File actualZipFile) {
         assertEntry(expectedEntry, expectedContents.getBytes(), actualZipFile);
     }

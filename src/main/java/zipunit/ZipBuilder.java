@@ -13,9 +13,11 @@
  */
 package zipunit;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -39,12 +41,16 @@ public class ZipBuilder {
     }
 
     public ZipBuilder withEntry(String entryName, byte[] content) {
-        entries.add(new Entry(entryName, content));
+        return withEntry(new Entry(entryName, new ByteArrayInputStream(content)));
+    }
+
+    public ZipBuilder withEntry(Entry entry) {
+        entries.add(entry);
         return this;
     }
 
     public ZipBuilder withDirEntry(String directoryName) {
-        return withEntry(dirName(directoryName), (byte[]) null);
+        return withEntry(new Entry(dirName(directoryName), null));
     }
 
     public File build() {
@@ -64,10 +70,9 @@ public class ZipBuilder {
                 ZipEntry zipEntry = new ZipEntry(entry.name);
                 output.putNextEntry(zipEntry);
                 if (entry.content != null) {
-                    output.write(entry.content);
-                    output.flush();
-                    output.closeEntry();
+                    copyContent(output, entry.content);
                 }
+                output.closeEntry();
             }
             output.finish();
             return file;
@@ -75,6 +80,29 @@ public class ZipBuilder {
             throw new RuntimeException("A problem occurred while building zip file", e);
         } finally {
             close(output);
+        }
+    }
+
+    private void copyContent(ZipOutputStream output, InputStream input) throws IOException {
+        byte[] buffer = new byte[1024];
+        int length = -1;
+        try {
+            while ((length = input.read(buffer)) != -1) {
+                output.write(buffer, 0, length);
+            }
+            output.flush();
+        } finally {
+            close(input);
+        }
+    }
+
+    private void close(InputStream input) {
+        if (input != null) {
+            try {
+                input.close();
+            } catch (IOException e) {
+
+            }
         }
     }
 
@@ -95,11 +123,11 @@ public class ZipBuilder {
         }
     }
 
-    private class Entry {
-        final String name;
-        final byte[] content;
+    public static class Entry {
+        private final String name;
+        private final InputStream content;
 
-        private Entry(String name, byte[] content) {
+        public Entry(String name, InputStream content) {
             this.name = name;
             this.content = content;
         }
