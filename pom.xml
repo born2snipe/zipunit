@@ -8,6 +8,8 @@
     <packaging>jar</packaging>
     <name>zipunit</name>
 
+    <description>This is a simple Java API for testing Zip/Jar files</description>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
