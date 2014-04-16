@@ -35,6 +35,16 @@ public class AssertZipTest {
     }
 
     @Test(expected = AssertionError.class)
+    public void shouldFailWhenTheEntryExistsAndYouExpectedItToNotExist() {
+        AssertZip.assertEntryDoesNotExist("1.txt", zipBuilder.build());
+    }
+
+    @Test
+    public void shouldSupportAssertingAnEntryDoesNotExist() {
+        AssertZip.assertEntryDoesNotExist("doesNotExist", zipBuilder.build());
+    }
+
+    @Test(expected = AssertionError.class)
     public void shouldFailWhenAnEntryCanNotBeFoundWhenComparingComments() {
         AssertZip.assertEntryComment("doesNotExist", "comment", zipBuilder.build());
     }

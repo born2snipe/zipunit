@@ -25,6 +25,15 @@ import java.util.zip.ZipFile;
 import static org.junit.Assert.*;
 
 public class AssertZip {
+    public static void assertEntryDoesNotExist(final String expectedEntry, File actualZip) {
+        open(actualZip, new WhileZipIsOpen() {
+            public void whileOpen(ZipFile zipFile) throws Exception {
+                assertNull("The entry [" + expectedEntry + "] appears to exist and we did not expect the entry to exist",
+                        zipFile.getEntry(expectedEntry));
+            }
+        });
+    }
+
     public static void assertEntryComment(String expectedEntry, final String expectedComment, File actualZipFile) {
         assertEntryExists(expectedEntry, actualZipFile);
         open(actualZipFile, new SpecificEntry(expectedEntry) {
@@ -38,7 +47,7 @@ public class AssertZip {
         assertEntryExists(expectedEntry, actualZipFile);
         open(actualZipFile, new SpecificEntry(expectedEntry) {
             protected void handleEntry(ZipFile file, ZipEntry entry) throws Exception {
-                assertEquals(expectedSize, entry.getSize());
+                assertEquals("The entry expected size does not match", expectedSize, entry.getSize());
             }
         });
     }
@@ -78,7 +87,6 @@ public class AssertZip {
 
     public static void assertDirectoryEntryExist(final String expectedDirectoryPath, File actualZip) {
         final String directoryPath = dirName(expectedDirectoryPath);
-        assertFileExists(actualZip);
         assertEntryExists(directoryPath, actualZip);
         open(actualZip, new WhileZipIsOpen() {
             public void whileOpen(ZipFile zipFile) throws Exception {
