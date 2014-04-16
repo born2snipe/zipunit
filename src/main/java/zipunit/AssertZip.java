@@ -34,11 +34,11 @@ public class AssertZip {
         });
     }
 
-    public static void assertEntryComment(String expectedEntry, final String expectedComment, File actualZipFile) {
+    public static void assertEntryComment(final String expectedEntry, final String expectedComment, File actualZipFile) {
         assertEntryExists(expectedEntry, actualZipFile);
         open(actualZipFile, new SpecificEntry(expectedEntry) {
             protected void handleEntry(ZipFile file, ZipEntry entry) throws Exception {
-                assertEquals("The entry comment does not match", expectedComment, entry.getComment());
+                assertEquals("The entry [" + expectedEntry + "] comment does not match", expectedComment, entry.getComment());
             }
         });
     }
@@ -47,7 +47,7 @@ public class AssertZip {
         assertEntryExists(expectedEntry, actualZipFile);
         open(actualZipFile, new SpecificEntry(expectedEntry) {
             protected void handleEntry(ZipFile file, ZipEntry entry) throws Exception {
-                assertEquals("The entry expected size does not match", expectedSize, entry.getSize());
+                assertEquals("The entry [" + expectedEntry + "] expected size does not match", expectedSize, entry.getSize());
             }
         });
     }
@@ -60,7 +60,7 @@ public class AssertZip {
         assertEntryExists(expectedEntry, actualZipFile);
         open(actualZipFile, new SpecificEntry(expectedEntry) {
             protected void handleEntry(ZipFile file, ZipEntry entry) throws Exception {
-                assertArrayEquals("Expected content does not match for entry [" + expectedEntry + "]",
+                assertArrayEquals("The entry [" + expectedEntry + "] expected content does not match",
                         expectedContents, contentsOf(entry, file));
 
             }
@@ -70,7 +70,7 @@ public class AssertZip {
     public static void assertEntryExists(final String expectedEntry, File actualZipFile) {
         open(actualZipFile, new SpecificEntry(expectedEntry) {
             protected void handleEntry(ZipFile file, ZipEntry entry) throws Exception {
-                assertNotNull("Expected to find entry [" + expectedEntry + "], but was not found", entry);
+                assertNotNull(notFoundMessageFor(expectedEntry), entry);
             }
         });
     }
@@ -85,15 +85,27 @@ public class AssertZip {
         assertEquals("Number of entries do not match", expectedNumberOfEntries, counter.get());
     }
 
-    public static void assertDirectoryEntryExist(final String expectedDirectoryPath, File actualZip) {
-        final String directoryPath = dirName(expectedDirectoryPath);
-        assertEntryExists(directoryPath, actualZip);
+    public static void assertDirectoryEntryExist(final String expectedDirectoryPath, final File actualZip) {
         open(actualZip, new WhileZipIsOpen() {
             public void whileOpen(ZipFile zipFile) throws Exception {
-                ZipEntry entry = zipFile.getEntry(directoryPath);
-                assertTrue("It appears the entry [" + expectedDirectoryPath + "] is not a directory", entry.isDirectory());
+                ZipEntry entry = findDirectoryEntryOf(zipFile, expectedDirectoryPath);
+                assertNotNull(notFoundMessageFor(expectedDirectoryPath), entry);
+                assertTrue("The entry [" + expectedDirectoryPath + "] is not a directory", entry.isDirectory());
             }
         });
+    }
+
+    private static ZipEntry findDirectoryEntryOf(ZipFile zipFile, String expectedDirectoryPath) {
+        String directoryPath = dirName(expectedDirectoryPath);
+        ZipEntry entry = zipFile.getEntry(directoryPath);
+        if (entry == null) {
+            entry = zipFile.getEntry(expectedDirectoryPath);
+        }
+        return entry;
+    }
+
+    private static String notFoundMessageFor(String expectedEntry) {
+        return "The entry [" + expectedEntry + "] was not found";
     }
 
     private static String dirName(String expectedDirectoryPath) {

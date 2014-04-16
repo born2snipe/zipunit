@@ -63,7 +63,7 @@ public class AssertZipTest {
     @Test
     public void shouldFailWhenTheCommentsDoNotMatch() {
         zipBuilder.withEntry(entryWithComment("test.txt", "comment"));
-        assertFailure("The entry comment does not match", new ExpectedAssertionFailure() {
+        assertFailure("The entry [test.txt] comment does not match", new ExpectedAssertionFailure() {
             protected void performAssertion() {
                 AssertZip.assertEntryComment("test.txt", "doesNotMatch", zipBuilder.build());
             }
@@ -92,7 +92,7 @@ public class AssertZipTest {
 
     @Test
     public void shouldFailWhenTheFileSizeDoesNotMatch() {
-        assertFailure("The entry expected size does not match", new ExpectedAssertionFailure() {
+        assertFailure("The entry [1.txt] expected size does not match", new ExpectedAssertionFailure() {
             protected void performAssertion() {
                 AssertZip.assertEntryActualSize("1.txt", 0, zipBuilder.build());
             }
@@ -101,9 +101,18 @@ public class AssertZipTest {
 
     @Test
     public void shouldFailWhenAnEntryDoesNotExistWhenAssertingADirectory() {
-        assertEntryDoesNotExistFailure("doesNotExist/", new ExpectedAssertionFailure() {
+        assertEntryDoesNotExistFailure("doesNotExist", new ExpectedAssertionFailure() {
             protected void performAssertion() {
                 AssertZip.assertDirectoryEntryExist("doesNotExist", zipBuilder.build());
+            }
+        });
+    }
+
+    @Test
+    public void shouldFailWhenAnEntryIsNotADirectoryWhenAssertingADirectory() {
+        assertFailure("The entry [1.txt] is not a directory", new ExpectedAssertionFailure() {
+            protected void performAssertion() {
+                AssertZip.assertDirectoryEntryExist("1.txt", zipBuilder.build());
             }
         });
     }
@@ -161,7 +170,7 @@ public class AssertZipTest {
 
     @Test
     public void shouldFailWhenAnEntryBinaryContentsDoesNotMatch() {
-        assertFailure("Expected content does not match for entry [2.bin]", new ExpectedAssertionFailure() {
+        assertFailure("The entry [2.bin] expected content does not match", new ExpectedAssertionFailure() {
             protected void performAssertion() {
                 AssertZip.assertEntry("2.bin", new byte[]{0}, zipBuilder.build());
             }
@@ -170,7 +179,7 @@ public class AssertZipTest {
 
     @Test
     public void shouldFailWhenAnEntryStringContentsDoesNotMatch() {
-        assertFailure("Expected content does not match for entry [1.txt]", new ExpectedAssertionFailure() {
+        assertFailure("The entry [1.txt] expected content does not match", new ExpectedAssertionFailure() {
             protected void performAssertion() {
                 AssertZip.assertEntry("1.txt", "doesNotMatch", zipBuilder.build());
             }
@@ -219,7 +228,7 @@ public class AssertZipTest {
     }
 
     private void assertEntryDoesNotExistFailure(final String expectedEntry, ExpectedAssertionFailure expectedAssertionFailure) {
-        assertFailure("Expected to find entry [" + expectedEntry + "], but was not found", expectedAssertionFailure);
+        assertFailure("The entry [" + expectedEntry + "] was not found", expectedAssertionFailure);
     }
 
     private void assertFileNotFoundFailure(ExpectedAssertionFailure expectedAssertionFailure) {
@@ -230,8 +239,8 @@ public class AssertZipTest {
         String actualMessage = expectedAssertionFailure.runAssertion();
         assertTrue("Please provide a message", expectedMessage.trim().length() > 0);
         assertTrue("Failure message does not start as we expected.\n" +
-                        "\texpected=[" + expectedMessage + "]\n" +
-                        "\tactual=[" + actualMessage + "]",
+                        "\t    expectedPrefix=[" + expectedMessage + "...]\n" +
+                        "\tactualWholeMessage=[" + actualMessage + "]",
                 actualMessage.startsWith(expectedMessage)
         );
     }
