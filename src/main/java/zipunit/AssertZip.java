@@ -70,7 +70,7 @@ public class AssertZip {
     public static void assertEntryExists(final String expectedEntry, File actualZipFile) {
         open(actualZipFile, new SpecificEntry(expectedEntry) {
             protected void handleEntry(ZipFile file, ZipEntry entry) throws Exception {
-                assertNotNull("Expected to find entry [" + expectedEntry + "], but was not found.", entry);
+                assertNotNull("Expected to find entry [" + expectedEntry + "], but was not found", entry);
             }
         });
     }

@@ -21,6 +21,9 @@ import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.io.IOException;
 
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 public class AssertZipTest {
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -34,9 +37,13 @@ public class AssertZipTest {
         zipBuilder.withDirEntry("dir/");
     }
 
-    @Test(expected = AssertionError.class)
+    @Test
     public void shouldFailWhenTheEntryExistsAndYouExpectedItToNotExist() {
-        AssertZip.assertEntryDoesNotExist("1.txt", zipBuilder.build());
+        assertFailure("The entry [1.txt] appears to exist and we did not expect the entry to exist", new ExpectedAssertionFailure() {
+            protected void performAssertion() {
+                AssertZip.assertEntryDoesNotExist("1.txt", zipBuilder.build());
+            }
+        });
     }
 
     @Test
@@ -44,15 +51,23 @@ public class AssertZipTest {
         AssertZip.assertEntryDoesNotExist("doesNotExist", zipBuilder.build());
     }
 
-    @Test(expected = AssertionError.class)
+    @Test
     public void shouldFailWhenAnEntryCanNotBeFoundWhenComparingComments() {
-        AssertZip.assertEntryComment("doesNotExist", "comment", zipBuilder.build());
+        assertEntryDoesNotExistFailure("doesNotExist", new ExpectedAssertionFailure() {
+            protected void performAssertion() {
+                AssertZip.assertEntryComment("doesNotExist", "comment", zipBuilder.build());
+            }
+        });
     }
 
-    @Test(expected = AssertionError.class)
+    @Test
     public void shouldFailWhenTheCommentsDoNotMatch() {
         zipBuilder.withEntry(entryWithComment("test.txt", "comment"));
-        AssertZip.assertEntryComment("test.txt", "doesNotMatch", zipBuilder.build());
+        assertFailure("The entry comment does not match", new ExpectedAssertionFailure() {
+            protected void performAssertion() {
+                AssertZip.assertEntryComment("test.txt", "doesNotMatch", zipBuilder.build());
+            }
+        });
     }
 
     @Test
@@ -66,19 +81,31 @@ public class AssertZipTest {
         AssertZip.assertEntryActualSize("1.txt", 7, zipBuilder.build());
     }
 
-    @Test(expected = AssertionError.class)
+    @Test
     public void shouldFailWhenTheEntryDoesNotExistWhenCheckingTheFileSize() {
-        AssertZip.assertEntryActualSize("doesNotExist", 0, zipBuilder.build());
+        assertEntryDoesNotExistFailure("doesNotExist", new ExpectedAssertionFailure() {
+            protected void performAssertion() {
+                AssertZip.assertEntryActualSize("doesNotExist", 0, zipBuilder.build());
+            }
+        });
     }
 
-    @Test(expected = AssertionError.class)
+    @Test
     public void shouldFailWhenTheFileSizeDoesNotMatch() {
-        AssertZip.assertEntryActualSize("1.txt", 0, zipBuilder.build());
+        assertFailure("The entry expected size does not match", new ExpectedAssertionFailure() {
+            protected void performAssertion() {
+                AssertZip.assertEntryActualSize("1.txt", 0, zipBuilder.build());
+            }
+        });
     }
 
-    @Test(expected = AssertionError.class)
+    @Test
     public void shouldFailWhenAnEntryDoesNotExistWhenAssertingADirectory() {
-        AssertZip.assertDirectoryEntryExist("doesNotExist", zipBuilder.build());
+        assertEntryDoesNotExistFailure("doesNotExist/", new ExpectedAssertionFailure() {
+            protected void performAssertion() {
+                AssertZip.assertDirectoryEntryExist("doesNotExist", zipBuilder.build());
+            }
+        });
     }
 
     @Test
@@ -86,44 +113,77 @@ public class AssertZipTest {
         AssertZip.assertDirectoryEntryExist("dir", zipBuilder.build());
     }
 
-    @Test(expected = AssertionError.class)
+    @Test
     public void shouldFailIfAZipFileIsNotFoundWhenAssertingADirectory() {
-        AssertZip.assertDirectoryEntryExist("dir", nonExistentZipFile());
+        assertFileNotFoundFailure(new ExpectedAssertionFailure() {
+            protected void performAssertion() {
+                AssertZip.assertDirectoryEntryExist("dir", nonExistentZipFile());
+            }
+        });
     }
 
-    @Test(expected = AssertionError.class)
+    @Test
     public void shouldFailIfAZipFileIsNotFoundWhenAssertingEntryBinaryContent() {
-        AssertZip.assertEntry("2.bin", new byte[]{1, 2, 3}, nonExistentZipFile());
+        assertFileNotFoundFailure(new ExpectedAssertionFailure() {
+            protected void performAssertion() {
+                AssertZip.assertEntry("2.bin", new byte[]{1, 2, 3}, nonExistentZipFile());
+            }
+        });
     }
 
-    @Test(expected = AssertionError.class)
+    @Test
     public void shouldFailIfAZipFileIsNotFoundWhenAssertingEntryStringContent() {
-        AssertZip.assertEntry("1.txt", "content", nonExistentZipFile());
+        assertFileNotFoundFailure(new ExpectedAssertionFailure() {
+            protected void performAssertion() {
+                AssertZip.assertEntry("1.txt", "content", nonExistentZipFile());
+            }
+        });
     }
 
-    @Test(expected = AssertionError.class)
+    @Test
     public void shouldFailIfAZipFileIsNotFoundWhenAssertingEntryCount() {
-        AssertZip.assertNumberOfEntriesIs(0, nonExistentZipFile());
+        assertFileNotFoundFailure(new ExpectedAssertionFailure() {
+            protected void performAssertion() {
+                AssertZip.assertNumberOfEntriesIs(0, nonExistentZipFile());
+            }
+        });
     }
 
-    @Test(expected = AssertionError.class)
+    @Test
     public void shouldFailWhenTheNumberEntriesDoesNotMatch() {
-        AssertZip.assertNumberOfEntriesIs(0, zipBuilder.build());
+        assertFailure("Number of entries do not match", new ExpectedAssertionFailure() {
+            @Override
+            protected void performAssertion() {
+                AssertZip.assertNumberOfEntriesIs(0, zipBuilder.build());
+            }
+        });
     }
 
-    @Test(expected = AssertionError.class)
+    @Test
     public void shouldFailWhenAnEntryBinaryContentsDoesNotMatch() {
-        AssertZip.assertEntry("2.bin", new byte[]{0}, zipBuilder.build());
+        assertFailure("Expected content does not match for entry [2.bin]", new ExpectedAssertionFailure() {
+            protected void performAssertion() {
+                AssertZip.assertEntry("2.bin", new byte[]{0}, zipBuilder.build());
+            }
+        });
     }
 
-    @Test(expected = AssertionError.class)
+    @Test
     public void shouldFailWhenAnEntryStringContentsDoesNotMatch() {
-        AssertZip.assertEntry("1.txt", "doesNotMatch", zipBuilder.build());
+        assertFailure("Expected content does not match for entry [1.txt]", new ExpectedAssertionFailure() {
+            protected void performAssertion() {
+                AssertZip.assertEntry("1.txt", "doesNotMatch", zipBuilder.build());
+            }
+        });
     }
 
-    @Test(expected = AssertionError.class)
+    @Test
     public void shouldFailWhenAnEntryDoesNotExistingInTheZipFile() {
-        AssertZip.assertEntryExists("doesNotExist", zipBuilder.build());
+        assertEntryDoesNotExistFailure("doesNotExist", new ExpectedAssertionFailure() {
+            protected void performAssertion() {
+                AssertZip.assertEntryExists("doesNotExist", zipBuilder.build());
+            }
+        });
     }
 
     @Test
@@ -156,5 +216,37 @@ public class AssertZipTest {
         ZipBuilder.Entry entry = new ZipBuilder.Entry(entryPath, "");
         entry.setComment(comment);
         return entry;
+    }
+
+    private void assertEntryDoesNotExistFailure(final String expectedEntry, ExpectedAssertionFailure expectedAssertionFailure) {
+        assertFailure("Expected to find entry [" + expectedEntry + "], but was not found", expectedAssertionFailure);
+    }
+
+    private void assertFileNotFoundFailure(ExpectedAssertionFailure expectedAssertionFailure) {
+        assertFailure("ZIP file does not exist", expectedAssertionFailure);
+    }
+
+    private void assertFailure(String expectedMessage, ExpectedAssertionFailure expectedAssertionFailure) {
+        String actualMessage = expectedAssertionFailure.runAssertion();
+        assertTrue("Please provide a message", expectedMessage.trim().length() > 0);
+        assertTrue("Failure message does not start as we expected.\n" +
+                        "\texpected=[" + expectedMessage + "]\n" +
+                        "\tactual=[" + actualMessage + "]",
+                actualMessage.startsWith(expectedMessage)
+        );
+    }
+
+    private abstract class ExpectedAssertionFailure {
+        public String runAssertion() {
+            try {
+                performAssertion();
+                fail("we expected the assertion to fail");
+                return null;
+            } catch (AssertionError error) {
+                return error.getMessage();
+            }
+        }
+
+        protected abstract void performAssertion();
     }
 }
