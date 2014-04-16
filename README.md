@@ -1,5 +1,6 @@
 
-# ZipUnit
+# ZipUnit [![Build Status](https://travis-ci.org/born2snipe/zipunit.svg)](https://travis-ci.org/born2snipe/zipunit)
+
 
 This is a simple Java API for testing Zip/Jar files
 
