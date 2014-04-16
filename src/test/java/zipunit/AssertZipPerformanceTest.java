@@ -22,6 +22,7 @@ import java.io.File;
 import static org.junit.Assert.assertTrue;
 
 public class AssertZipPerformanceTest {
+    private static final long EXPECTED_MIN_TIME = 250L;
     private static File zipFile;
 
     @BeforeClass
@@ -40,7 +41,7 @@ public class AssertZipPerformanceTest {
 
     @Test
     public void assertTheContentOfAnEntryShouldBePerformant() {
-        assertElapsedTime(100L, new TimedTask() {
+        assertElapsedTime(EXPECTED_MIN_TIME, new TimedTask() {
             public void performTask() {
                 AssertZip.assertEntry("1000.txt", "content", zipFile);
             }
@@ -49,7 +50,7 @@ public class AssertZipPerformanceTest {
 
     @Test
     public void assertingTheNumberOfEntriesShouldBePerformant() {
-        assertElapsedTime(100L, new TimedTask() {
+        assertElapsedTime(EXPECTED_MIN_TIME, new TimedTask() {
             public void performTask() {
                 AssertZip.assertNumberOfEntriesIs(10000, zipFile);
             }
@@ -58,7 +59,7 @@ public class AssertZipPerformanceTest {
 
     @Test
     public void assertingEntryExistenceShouldBePerformant() {
-        assertElapsedTime(100L, new TimedTask() {
+        assertElapsedTime(EXPECTED_MIN_TIME, new TimedTask() {
             public void performTask() {
                 AssertZip.assertEntryExists("1.txt", zipFile);
             }
