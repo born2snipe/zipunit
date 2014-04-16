@@ -9,6 +9,7 @@
     <name>zipunit</name>
 
     <description>This is a simple Java API for testing Zip/Jar files</description>
+    <url>https://github.com/born2snipe/zipunit</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
