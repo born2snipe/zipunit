@@ -102,7 +102,9 @@
     </licenses>
 
     <scm>
+        <connection>scm:git:git@github.com:born2snipe/zipunit.git</connection>
         <developerConnection>scm:git:git://github.com/born2snipe/zipunit.git</developerConnection>
+        <url>git@github.com:born2snipe/zipunit.git</url>
     </scm>
 
     <description>This is a simple Java API for testing Zip/Jar files</description>
