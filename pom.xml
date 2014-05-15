@@ -27,6 +27,16 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <configuration>
+                    <mavenExecutorId>forked-path</mavenExecutorId>
+                    <useReleaseProfile>false</useReleaseProfile>
+                    <arguments>-Psonatype-oss-release -D=gpg.keyname=${env.MAVEN_PGP_KEYNAME} -Dgpg.passphrase=${env.MAVEN_PGP_PASSPHRASE}</arguments>
+                </configuration>
+            </plugin>
+
+            <plugin>
                 <groupId>com.mycila.maven-license-plugin</groupId>
                 <artifactId>maven-license-plugin</artifactId>
                 <version>1.9.0</version>
@@ -72,7 +82,7 @@
 
     <scm>
         <connection>scm:git:git@github.com:born2snipe/zipunit.git</connection>
-        <developerConnection>scm:git:git://github.com/born2snipe/zipunit.git</developerConnection>
+        <developerConnection>scm:git:git@github.com:born2snipe/zipunit.git</developerConnection>
         <url>git@github.com:born2snipe/zipunit.git</url>
     </scm>
 
